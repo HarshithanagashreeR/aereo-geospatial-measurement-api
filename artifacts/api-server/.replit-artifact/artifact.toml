@@ -15,14 +15,14 @@ run = "pnpm --filter @workspace/api-server run dev"
 [services.production]
 
 [services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+args = ["python3", "-m", "compileall", "-q", "artifacts/api-server/geospatial_api"]
 
 [services.production.build.env]
 NODE_ENV = "production"
 
 [services.production.run]
 # we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+args = ["sh", "-c", 'cd artifacts/api-server && exec python3 -m uvicorn geospatial_api.main:app --host 0.0.0.0 --port "$PORT"']
 
 [services.production.run.env]
 PORT = "8080"

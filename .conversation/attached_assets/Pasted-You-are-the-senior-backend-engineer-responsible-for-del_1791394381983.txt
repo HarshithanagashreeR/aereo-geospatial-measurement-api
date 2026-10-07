@@ -1,0 +1,60 @@
+You are the senior backend engineer responsible for delivering this project, not just generating example code.
+Build the complete Aereo Geospatial Measurement API from the requirements below.
+You have permission to create files, install dependencies, run commands, execute tests, inspect errors, modify the implementation, and repeat until the application works.
+Do not stop at generating code. Actually run the application and tests.
+Use Python + FastAPI + GeoPandas + Shapely + PyProj + SQLAlchemy + SQLite + Pytest.
+The backend must accept real .kml files and .zip files containing real Shapefiles.
+Implement:
+POST /api/files/
+GET /api/files/{id}/
+GET /api/files/{id}/measurements/
+Requirements:
+- Real KML processing using GeoPandas.
+- Real zipped Shapefile processing.
+- Extract feature ID, geometry type, geometry, CRS and properties.
+- Polygon → calculate area.
+- LineString → calculate length.
+- Point → no measurement required.
+- Unsupported geometries must not crash the complete processing operation.
+- Correctly handle geographic CRS such as EPSG:4326.
+- Never calculate area or length directly from latitude/longitude degrees.
+- Automatically select an appropriate projected CRS, preferably using GeoPandas UTM estimation where appropriate.
+- Preserve the source CRS and record the measurement CRS.
+- Handle missing/invalid CRS gracefully.
+- Persist upload metadata and processing status in SQLite.
+- Use proper Pydantic schemas and SQLAlchemy models.
+- Separate API routes, business logic, geospatial processing and database logic.
+- Implement proper error handling.
+- Add comprehensive pytest tests.
+- Add Docker support.
+- Create a professional README explaining setup, architecture, CRS strategy, API usage, testing and design decisions.
+IMPORTANT:
+Do not fake any GIS functionality.
+Do not hard-code measurements.
+Do not hard-code EPSG:32643 for every input.
+Do not create a frontend instead of the required backend.
+After implementation:
+1. Install all required dependencies.
+2. Start the FastAPI server.
+3. Run all tests.
+4. Fix every failing test.
+5. Test the upload endpoint with a real KML file.
+6. Test a real zipped Shapefile.
+7. Test EPSG:4326 → projected CRS transformation.
+8. Test Polygon area.
+9. Test LineString length.
+10. Test Point handling.
+11. Test invalid files.
+12. Test unsupported geometries.
+13. Verify /docs works.
+14. Verify the README commands work.
+Keep the implementation production-quality but do not introduce unnecessary technologies such as React, Redis, Celery, Kubernetes or microservices unless there is a concrete reason.
+At the end, give me:
+- project structure
+- technologies used
+- API endpoints
+- test results
+- how to run the project
+- important design decisions
+- known limitations
+- exact GitHub submission steps.

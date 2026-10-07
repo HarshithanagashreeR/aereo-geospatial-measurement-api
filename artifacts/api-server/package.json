@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
-    "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./dist/index.mjs",
+    "dev": "python3 -m uvicorn geospatial_api.main:app --host 0.0.0.0 --port ${PORT:-8080} --reload",
+    "build": "python3 -m compileall -q geospatial_api",
+    "start": "python3 -m uvicorn geospatial_api.main:app --host 0.0.0.0 --port ${PORT:-8080}",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

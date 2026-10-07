@@ -1,0 +1,18 @@
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Runtime dependencies for the Aereo Geospatial Measurement API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.142.2",
+    "fiona>=1.10.1",
+    "geopandas>=1.2.0",
+    "httpx>=0.28.1",
+    "pyogrio>=0.13.0",
+    "pyproj>=3.7.2",
+    "pytest>=9.1.1",
+    "python-multipart>=0.0.32",
+    "shapely>=2.2.0",
+    "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
+]

@@ -1,45 +1,51 @@
-# [Project name]
+# Aereo Geospatial Measurement API
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Backend API for uploading KML and zipped Shapefiles, preserving source features, and measuring polygon areas and line lengths in a projected CRS.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/api-server run dev` — run the FastAPI service on the assigned `PORT`
+- `cd artifacts/api-server && python3 -m pytest -v` — run the backend tests
+- `pnpm --filter @workspace/api-server run build` — compile-check the Python service
+- `pnpm --filter @workspace/api-server run typecheck` — typecheck the retained workspace API scaffold
+- Optional env: `AEREO_DATABASE_URL` — SQLite URL; defaults to `artifacts/api-server/data/aereo.sqlite3`
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.11, FastAPI, Pydantic, Uvicorn
+- GeoPandas, Shapely, PyProj, GDAL-backed Shapefile reading
+- SQLite with SQLAlchemy
+- Pytest with FastAPI TestClient
+- Docker image based on Python 3.11 slim
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/api-server/geospatial_api/routes.py` — HTTP endpoints
+- `artifacts/api-server/geospatial_api/processing.py` — KML/Shapefile processing and CRS measurements
+- `artifacts/api-server/geospatial_api/models.py` — SQLite persistence models
+- `artifacts/api-server/geospatial_api/schemas.py` — Pydantic responses
+- `artifacts/api-server/tests/` — upload and measurement tests
+- `artifacts/api-server/README.md` — setup, API, CRS strategy, Docker, limitations, and GitHub steps
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- KML Placemark IDs and ExtendedData are retained by parsing KML XML into a GeoPandas GeoDataFrame; GeoPandas handles CRS transformations and measurements.
+- Missing or invalid Shapefile CRS is not guessed; features are preserved and measurements are skipped.
+- Upload source files are temporary; SQLite retains file metadata, properties, geometries, and results.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Accepts `.kml` files and `.zip` archives containing one Shapefile, computes polygon areas and line lengths in meters, and exposes feature geometry, properties, CRS, and processing status.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+The user explicitly requested a backend-only Python/FastAPI implementation with real GIS processing; do not replace it with a frontend or mocked measurements.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Shapefile ZIP archives require matching `.shp`, `.shx`, and `.dbf` components; `.prj` is needed for measurements.
+- The API is routed under `/api`; Swagger is available at `/docs` locally and `/api/docs` through the Replit preview route.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Full implementation notes and supported geometry scope are in `artifacts/api-server/README.md`.
