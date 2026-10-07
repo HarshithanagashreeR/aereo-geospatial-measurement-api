@@ -115,12 +115,4 @@ Persist `/app/data` with a volume for SQLite data. Configure `AEREO_DATABASE_URL
 - Vector drivers can normalize KML feature metadata, so preserve Placemark IDs and ExtendedData from the source document while using GDAL-backed geometry ingestion.
 - Future production work could add authentication and quotas, asynchronous jobs for large uploads, durable original-file storage, database migrations, and domain-specific geodesic or equal-area measurement policies for very broad datasets.
 
-## GitHub submission
 
-1. Create an empty GitHub repository (do not initialize it with a README if this project will be pushed as-is).
-2. From the repository root, initialize Git if needed: `git init`.
-3. Check the staged changes and ensure local databases, virtual environments, and secrets are excluded: `git status --short`.
-4. Stage the service and its Replit Python runtime configuration: `git add .replit pyproject.toml uv.lock replit.md artifacts/api-server`.
-5. Commit: `git commit -m "Build Aereo geospatial measurement API"`.
-6. Add your repository URL: `git remote add origin https://github.com/<owner>/<repository>.git`.
-7. Push the default branch: `git branch -M main && git push -u origin main`.
