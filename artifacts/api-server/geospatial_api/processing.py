@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import zipfile
 from pathlib import PurePosixPath
@@ -29,6 +30,7 @@ from shapely.validation import make_valid
 MAX_UNCOMPRESSED_ZIP_BYTES = 256 * 1024 * 1024
 MAX_ZIP_COMPRESSION_RATIO = 200
 GEOGRAPHIC_CRS = "EPSG:4326"
+logger = logging.getLogger(__name__)
 
 
 class GeospatialProcessingError(ValueError):
@@ -168,6 +170,85 @@ def _read_kml_xml(path: str) -> gpd.GeoDataFrame:
     return frame
 
 
+def _read_kml_with_gdal(
+    path: str, metadata_frame: gpd.GeoDataFrame
+) -> gpd.GeoDataFrame:
+    """Use GeoPandas/GDAL for standard KML geometry and XML for source metadata."""
+    try:
+        driver_frame = gpd.read_file(path, engine="pyogrio")
+    except Exception as exc:
+        logger.warning(
+            "GeoPandas/GDAL could not read KML; using the XML fallback: %s", exc
+        )
+        return metadata_frame
+
+    if driver_frame.empty or len(driver_frame) != len(metadata_frame):
+        logger.warning(
+            "GeoPandas/GDAL returned %s KML features for %s Placemarks; "
+            "using the XML fallback.",
+            len(driver_frame),
+            len(metadata_frame),
+        )
+        return metadata_frame
+
+    source_ids = [str(value) for value in metadata_frame["_source_feature_id"]]
+    driver_geometries = list(driver_frame.geometry)
+    if "id" in driver_frame.columns:
+        driver_ids = [
+            None if value is None or pd.isna(value) else str(value)
+            for value in driver_frame["id"]
+        ]
+        if (
+            None not in driver_ids
+            and len(set(driver_ids)) == len(driver_ids)
+            and len(set(source_ids)) == len(source_ids)
+            and set(driver_ids) == set(source_ids)
+        ):
+            geometry_by_id = dict(zip(driver_ids, driver_geometries))
+            driver_geometries = [geometry_by_id[source_id] for source_id in source_ids]
+
+    merged_geometries = []
+    for source_geometry, driver_geometry in zip(
+        metadata_frame.geometry, driver_geometries
+    ):
+        if (
+            source_geometry is None
+            or source_geometry.is_empty
+            or source_geometry.geom_type
+            not in {
+                "Point",
+                "LineString",
+                "Polygon",
+                "MultiPoint",
+                "MultiLineString",
+                "MultiPolygon",
+            }
+        ):
+            # Keep XML representations for empty and unsupported geometries.
+            merged_geometries.append(source_geometry)
+        elif (
+            driver_geometry is None
+            or driver_geometry.is_empty
+            or driver_geometry.geom_type != source_geometry.geom_type
+        ):
+            logger.warning(
+                "GeoPandas/GDAL changed a KML geometry type; using the XML fallback."
+            )
+            return metadata_frame
+        else:
+            merged_geometries.append(driver_geometry)
+
+    geometry_crs = driver_frame.crs or metadata_frame.crs
+    attributes = metadata_frame.drop(columns=metadata_frame.geometry.name)
+    return gpd.GeoDataFrame(
+        attributes,
+        geometry=gpd.GeoSeries(
+            merged_geometries, index=metadata_frame.index, crs=geometry_crs
+        ),
+        crs=geometry_crs,
+    )
+
+
 def _validate_zip(path: str) -> str:
     if not zipfile.is_zipfile(path):
         raise GeospatialProcessingError("The uploaded ZIP file is not a valid archive.")
@@ -231,11 +312,11 @@ def _validate_zip(path: str) -> str:
 def read_geodataframe(path: str, file_format: str) -> gpd.GeoDataFrame:
     """Read KML or a ZIP containing exactly one Shapefile into a GeoDataFrame."""
     if file_format == "kml":
-        # OGR KML drivers vary in whether they expose Placemark IDs and all
-        # ExtendedData values. Parse the standard KML structure directly so
-        # those source fields are retained, then use GeoPandas for the frame,
-        # CRS transformations, and metric calculations.
-        return _read_kml_xml(path)
+        # Keep IDs and ExtendedData from the source XML, while using GDAL for
+        # normal KML geometry. Some KML extensions are not GDAL-readable, so
+        # retain the XML geometry fallback for those files.
+        metadata_frame = _read_kml_xml(path)
+        return _read_kml_with_gdal(path, metadata_frame)
 
     if file_format == "zip":
         shapefile = _validate_zip(path)

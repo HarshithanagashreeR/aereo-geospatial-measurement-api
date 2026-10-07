@@ -8,6 +8,8 @@ import geopandas as gpd
 from shapely.geometry import GeometryCollection, LineString, Point, Polygon
 from sqlalchemy import select
 
+from geospatial_api import processing
+from geospatial_api.processing import choose_measurement_crs
 from geospatial_api.processing import process_geodataframe
 
 
@@ -101,6 +103,47 @@ def test_real_kml_linestring_length_is_in_meters(client):
     assert result["measurement_crs"].startswith("EPSG:326")
     assert feature["measurement_unit"] == "meters"
     assert 1_100 < feature["measurement_value"] < 1_120
+
+
+def test_standard_kml_geometry_is_read_with_gdal_and_metadata_is_preserved(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "parcel.kml"
+    source.write_text(kml_for(polygon_geometry()), encoding="utf-8")
+    original_read_file = processing.gpd.read_file
+    engines = []
+
+    def track_engine(*args, **kwargs):
+        engines.append(kwargs.get("engine"))
+        return original_read_file(*args, **kwargs)
+
+    monkeypatch.setattr(processing.gpd, "read_file", track_engine)
+
+    result = processing.process_file(str(source), "kml")
+
+    assert engines == ["pyogrio"]
+    assert result["source_crs"] == "EPSG:4326"
+    feature = result["features"][0]
+    assert feature["source_feature_id"] == "field-42"
+    assert feature["geometry_type"] == "Polygon"
+    assert feature["properties"]["land_use"] == "meadow"
+    assert feature["measurement_status"] == "measured"
+
+
+def test_geographic_crs_is_transformed_and_utm_zone_is_dataset_specific():
+    frame = gpd.GeoDataFrame(
+        {"route": ["new-york"]},
+        geometry=[LineString([(-74, 40.7), (-73.99, 40.7)])],
+        crs="EPSG:4269",
+    )
+
+    result = process_geodataframe(frame)
+
+    assert result["source_crs"] == "EPSG:4269"
+    assert result["measurement_crs"] == "EPSG:32618"
+    assert result["features"][0]["measurement_status"] == "measured"
+    assert result["features"][0]["measurement_unit"] == "meters"
+    assert result["features"][0]["measurement_value"] > 0
 
 
 def test_real_zipped_shapefile_is_processed(client, tmp_path):

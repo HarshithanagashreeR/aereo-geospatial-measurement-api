@@ -60,7 +60,7 @@ The original CRS is retained as `source_crs`. Geometry with an identified CRS is
 
 KML uses EPSG:4326 as defined by the KML format. A Shapefile with no usable CRS is not silently assigned one: its geometries and properties are preserved, but area and length are skipped with `missing_crs` status. Invalid polygon rings are repaired for measurement only; the returned geometry remains the original source geometry.
 
-KML Placemark XML is parsed directly into a GeoPandas GeoDataFrame so source IDs and ExtendedData are preserved consistently across GDAL builds. GeoPandas handles the CRS transformations and measurement calculations. ZIP Shapefiles are read through GeoPandas' GDAL-backed reader after the archive is checked for path traversal, excessive expansion, and multiple Shapefiles. Uploads are limited to 50 MiB compressed and ZIP contents to 256 MiB expanded.
+Standard KML geometry is read with GeoPandas' Pyogrio engine, backed by GDAL. Placemark XML is also read to preserve source IDs and ExtendedData that GDAL drivers may normalize or omit; those source attributes are merged back onto the GDAL geometries. If a KML extension cannot be parsed by GDAL, the service logs the fallback and uses the parsed XML geometry so unsupported features remain visible and do not discard other Placemarks. ZIP Shapefiles are read through GeoPandas' GDAL-backed reader after the archive is checked for path traversal, excessive expansion, and multiple Shapefiles. Uploads are limited to 50 MiB compressed and ZIP contents to 256 MiB expanded.
 
 ## Architecture
 
@@ -108,6 +108,12 @@ Persist `/app/data` with a volume for SQLite data. Configure `AEREO_DATABASE_URL
 - KML parsing supports standard KML Point, LineString, LinearRing, Polygon, MultiGeometry, and ExtendedData. Network links, KML tours, and Google-specific `gx:` tracks are not processed.
 - UTM is appropriate for local/regional datasets. A dataset spanning continents or the antimeridian may need a domain-specific equal-area or geodesic measurement policy.
 - This API does not provide authentication, quotas, asynchronous job queues, original-file retention, or long-term storage outside the configured SQLite database.
+
+## Learning and future scope
+
+- Keep source geometry and CRS distinct from the projected geometry used for measurements; never calculate areas or lengths directly in geographic degrees.
+- Vector drivers can normalize KML feature metadata, so preserve Placemark IDs and ExtendedData from the source document while using GDAL-backed geometry ingestion.
+- Future production work could add authentication and quotas, asynchronous jobs for large uploads, durable original-file storage, database migrations, and domain-specific geodesic or equal-area measurement policies for very broad datasets.
 
 ## GitHub submission
 
