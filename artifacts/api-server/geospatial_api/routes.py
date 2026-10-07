@@ -111,7 +111,7 @@ async def upload_file(
         record.error_message = str(exc)
         db.commit()
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"message": str(exc), "file_id": record.id},
         ) from exc
     except Exception as exc:
