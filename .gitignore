@@ -64,15 +64,27 @@ venv/
 .env.*
 !.env.example
 !.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
 
 # Local databases and temporary output
 *.db
 *.sqlite
 *.sqlite3
+*.db-*
+*.sqlite-*
 *.tmp
 *.temp
 *.swp
 *.log
+
+# Generated uploads and local application data
+/uploads/
+/artifacts/api-server/data/
 
 # User-provided attachments and conversation audit material
 /attached_assets/
