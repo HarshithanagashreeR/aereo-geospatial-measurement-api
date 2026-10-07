@@ -7,9 +7,12 @@ out-tsc
 *.tsbuildinfo
 .expo
 .expo-shared
+coverage/
+htmlcov/
 
 # dependencies
 node_modules
+/.pythonlibs/
 
 # IDEs and editors
 /.idea
@@ -47,3 +50,30 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+.upm/
+
+# Python runtime and test files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local databases and temporary output
+*.db
+*.sqlite
+*.sqlite3
+*.tmp
+*.temp
+*.swp
+*.log
+
+# User-provided attachments and conversation audit material
+/attached_assets/
+/.conversation/attached_assets/
